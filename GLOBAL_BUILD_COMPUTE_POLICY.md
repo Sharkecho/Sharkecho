@@ -150,3 +150,19 @@ Any Agent, Codex, Copilot, Worker, automation, or human modifying a repository u
 7. stop and report `COMPUTE_POLICY_REVIEW_REQUIRED` if classification is unclear.
 
 Project-local explicit rules override this document when they are stricter or more specific.
+
+---
+
+## 7. Account-wide source/build/gate topology — 2026-10-08 confirmed
+
+**This workflow applies to all projects owned by Sharkecho**, not only AI Translator. It defines the shared control plane while preserving Class A/Class B workload selection above:
+
+1. **Single source authority:** each project's canonical private GitHub repository remains authoritative for source, SSOT, branches, PRs, security and release. Public mirrors are never a second writable source of truth.
+2. **Common test dispatch:** classify each task. Lightweight checks may run locally or within an existing trusted environment; builds/tests requiring external compute are routed through **`Sharkecho/Public-Build-Farm`**, using standard GitHub-hosted runners when compatible and safe. Do not create needless cloud runs for every trivial change.
+3. **Immutable inputs:** bind test requests and results to a specific source commit SHA, task type, and gate version; use a private-source read-only scoped token, no persisted checkout credentials. Do not trigger privileged workflows from untrusted PR content.
+4. **Unified Gate:** only verifiable PASS results bound to the tested SHA permit downstream merge/release. Explicitly retain FAIL, BLOCKED and NOT_VERIFIED states and rollback/last-known-good. Parallelize independent jobs; integrate dependent gates serially.
+5. **Public-data safety:** the public runner's logs, artifacts and cache may be visible. Never output private source, proprietary tests, secrets, model weights without rights, personal data or raw private failure traces. If a job cannot maintain this boundary, run it in a controlled private context instead; privacy outranks free compute.
+6. **Cost and expansion:** default to zero paid compute; cache, batch and run only affected tests. GitLab and Gitee are **not enabled** as routine workers. Evaluate an additional isolated CI executor only when quantified queue time, concurrency, geographic connectivity or capacity demonstrates a need. Keep a single GitHub code authority.
+7. **Agent enforcement:** planners/Workers/Codex must read this global rule alongside project SSOT before creating CI or changing deployment. A project-specific stricter security/build requirement still takes precedence.
+
+This is a **policy default**, not evidence that every existing project has already been migrated or that every public-build job has passed.
